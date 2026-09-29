@@ -1,0 +1,74 @@
+// use prisma-8
+model User {
+  @@map("users")
+
+  id           Uuid                 @id @default(uuid())
+  name         String
+  email        String               @unique
+  password     String
+  avatar       String?
+  createdAt    DateTime             @default(now()) @map("created_at")
+  updatedAt    temporal.updatedAt() @map("updated_at")
+
+  bankAccounts BankAccount[]
+  categories   Category[]
+  transactions Transaction[]
+}
+
+enum BankAccountType {
+  CHECKING
+  INVESTMENT
+  CASH
+}
+
+model BankAccount {
+  @@map("bank_accounts")
+
+  id             Uuid                 @id @default(uuid())
+  userId         Uuid                 @map("user_id")
+  name           String
+  initialBalance BigInt               @map("initial_balance")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      temporal.updatedAt() @map("updated_at")
+  type           BankAccountType      @map("type")
+  color          String
+  transactions   Transaction[]
+
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model Category {
+  @@map("categories")
+  id           Uuid            @id @default(uuid())
+  userId       Uuid            @map("user_id")
+  name         String
+  icon         String
+  type         TransactionType @map("type")
+  transactions Transaction[]
+
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  @@map("transactions")
+
+  id            Uuid                 @id @default(uuid())
+  userId        Uuid                 @map("user_id")
+  bankAccountId Uuid                 @map("bank_account_id")
+  categoryId    Uuid?                @map("category_id")
+  name          String
+  value         BigInt
+  date          DateTime             @map("date")
+  type          TransactionType      @map("type")
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     temporal.updatedAt() @map("updated_at")
+
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankAccount   BankAccount          @relation(fields: [bankAccountId], references: [id], onDelete: Cascade)
+  category      Category?            @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+}
